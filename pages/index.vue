@@ -110,7 +110,7 @@ function SetColorAqi(aqi) {
     return "green";
   } else if (aqi < 100) {
     return "yellow darken-2";
-  } else if (aqi < 300) {
+  } else if (aqi < 200) {
     return "red darken-4";
   } else {
     return "mdi-emoticon-dead-outline";
@@ -121,7 +121,7 @@ function SetIconAqi(aqi) {
     return "mdi-emoticon-excited-outline";
   } else if (aqi < 100) {
     return "mdi-emoticon-outline";
-  } else if (aqi < 300) {
+  } else if (aqi < 200) {
     return "mdi-emoticon-angry-outline";
   } else {
     return "deep-purple";
