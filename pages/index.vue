@@ -1,22 +1,16 @@
 <template>
   <v-container grid-list-xl fluid>
     <v-layout row wrap>
+      <v-overlay :value="loading">
+        <v-progress-circular :size="90" :width="7" color="white" indeterminate></v-progress-circular>
+      </v-overlay>
       <v-flex v-for="(item,key) in datalist" :key="key" lg3 sm6 xs12>
-        <v-skeleton-loader
-          ref="skeleton"
-          :loading="loading"
-          :transition="transition"
-          :type="type"
-          :tile="tile"
-          class="mx-auto"
-        >
-          <mini-statistic
-            :icon="item.icon"
-            :title="item.title"
-            :sub-title="item.subtitle"
-            :color="item.color"
-          ></mini-statistic>
-        </v-skeleton-loader>
+        <mini-statistic
+          :icon="item.icon"
+          :title="item.title"
+          :sub-title="item.subtitle"
+          :color="item.color"
+        ></mini-statistic>
       </v-flex>
     </v-layout>
   </v-container>
@@ -25,14 +19,15 @@
 <script>
 import ChartCard from "../components/ChartCard.vue";
 import MiniStatistic from "@/components/statistic/MiniStatistic";
+import aqi from "../services/AqiService";
+import weather from "../services/WeatherService";
+import covid from "../services/CovidService";
 
 export default {
   components: { ChartCard, MiniStatistic },
   data: () => ({
-    loading: true,
-    tile: true,
-    type: "list-item-avatar-two-line",
-    transition: "scale-transition"
+    loading: true
+
     // datalist: [
     //   {
     //     icon: "mdi-emoticon-outline",
@@ -72,59 +67,51 @@ export default {
   async asyncData({ $axios, params }) {
     //get data from api
     let datalist = [];
-    let bangkokaqi = await $axios.get(
+    let bkkaqi = await $axios.get(
       "https://dbgateway.herokuapp.com/aqi/bangkok/bangkok"
     );
 
-    datalist.push({
-      icon: SetIconAqi(bangkokaqi.data.data.current.pollution.aqius),
-      title: bangkokaqi.data.data.current.pollution.aqius,
-      subtitle: bangkokaqi.data.data.city + " AQI",
-      color: SetColorAqi(bangkokaqi.data.data.current.pollution.aqius)
-    });
+    datalist.push(
+      aqi.SetAqiData(
+        bkkaqi.data.data.current.pollution.aqius,
+        bkkaqi.data.data.city
+      )
+    );
+    datalist.push(
+      weather.SetWeather(
+        bkkaqi.data.data.current.weather.tp,
+        bkkaqi.data.data.city
+      )
+    );
 
     let cnxaqi = await $axios.get(
       "https://dbgateway.herokuapp.com/aqi/Chiang Mai/Chiang Mai"
     );
 
-    datalist.push({
-      icon: SetIconAqi(cnxaqi.data.data.current.pollution.aqius),
-      title: cnxaqi.data.data.current.pollution.aqius,
-      subtitle: cnxaqi.data.data.city + " AQI",
-      color: SetColorAqi(cnxaqi.data.data.current.pollution.aqius)
-    });
-
-    datalist.push({
-      icon: "mdi-weather-hazy",
-      title: bangkokaqi.data.data.current.weather.tp,
-      subtitle: bangkokaqi.data.data.city + " °C",
-      color: "blue"
-    });
+    datalist.push(
+      aqi.SetAqiData(
+        cnxaqi.data.data.current.pollution.aqius,
+        cnxaqi.data.data.city
+      )
+    );
+    datalist.push(
+      weather.SetWeather(
+        cnxaqi.data.data.current.weather.tp,
+        cnxaqi.data.data.city
+      )
+    );
+    //get covid-19 thailand
+    let covidData = await $axios.get(
+      "http://lab.isaaclin.cn/nCoV/api/area?latest=1&provinceEng=Thailand"
+    );
+    datalist.push(
+      covid.SetCovid(
+        covidData.data.results[0].confirmedCount,
+        covidData.data.results[0].countryEnglishName
+      )
+    );
 
     return { datalist: datalist, loading: false };
   }
 };
-
-function SetColorAqi(aqi) {
-  if (aqi < 50) {
-    return "green";
-  } else if (aqi < 100) {
-    return "yellow darken-2";
-  } else if (aqi < 200) {
-    return "red darken-4";
-  } else {
-    return "mdi-emoticon-dead-outline";
-  }
-}
-function SetIconAqi(aqi) {
-  if (aqi < 50) {
-    return "mdi-emoticon-excited-outline";
-  } else if (aqi < 100) {
-    return "mdi-emoticon-outline";
-  } else if (aqi < 200) {
-    return "mdi-emoticon-angry-outline";
-  } else {
-    return "deep-purple";
-  }
-}
 </script>
